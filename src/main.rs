@@ -24,10 +24,26 @@ fn get_int_from_user(prompt: String) -> i32 {
     input
 }
 
+fn ask_if_want_to_update_data() -> bool {
+    let input: i32 = get_int_from_user("Update Game Data? (1 for yes, 2 for no): ".to_string());
+    if input == 1 {
+        return true;
+    } else if input == 2 {
+        return false;
+    } else {
+        println!("Invalid input. Try again.");
+        return ask_if_want_to_update_data();
+    }
+}
+
 async fn select_event(cc: String) -> gatya_data::GatyaEvent {
     std::fs::create_dir_all("data").unwrap();
 
-    let data: String = get_event_data(cc.clone(), false).await;
+    let force: bool = ask_if_want_to_update_data();
+
+    println!("Getting event data...");
+
+    let data: String = get_event_data(cc.clone(), force).await;
     let gatya_events: Vec<gatya_data::GatyaEvent> = gatya_data::parse_gatya_events(data);
     let valid_events: Vec<&gatya_data::GatyaEvent> = gatya_events
         .iter()
@@ -181,8 +197,9 @@ async fn main() {
 
     println!();
 
-    let seek_or_find: i32 =
-        get_int_from_user("1. Find seed\n2. Seek seed\nEnter choice: ".to_string());
+    let seek_or_find: i32 = get_int_from_user(
+        "1. Find seed by cats\n2. Seek seed by rarities\nEnter choice: ".to_string(),
+    );
     let mut cats: Vec<(u32, u32)> = Vec::new();
     if seek_or_find == 1 {
         cats = get_cat_slots(gatya_slot_data.clone(), total_rares);
