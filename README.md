@@ -7,7 +7,7 @@ contain a specific pattern of rarities.
 
 I am very new to rust, so this code probably isn't great.
 
-The code is heavly based on godfat's code here:
+The seed tracking code is based on godfat's work here:
 <https://gitlab.com/godfat/battle-cats-rolls> and you can view the cats for any
 seed here: <http://bc.godfat.org/>
 
