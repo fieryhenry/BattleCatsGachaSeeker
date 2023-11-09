@@ -20,7 +20,14 @@ fn get_int_from_user(prompt: String) -> i32 {
 
     let mut input: String = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
-    let input: i32 = input.trim().parse().unwrap();
+
+    let input: i32 = match input.trim().parse() {
+        Ok(num) => num,
+        Err(_) => {
+            println!("Invalid input. Try again.");
+            return get_int_from_user(prompt);
+        }
+    };
     input
 }
 
@@ -73,10 +80,16 @@ async fn select_event(cc: String) -> gatya_data::GatyaEvent {
             gatya_event.banner_txt
         );
     }
-    let input: i32 = get_int_from_user("Select event: ".to_string());
-    if input < 1 || input > valid_events.len() as i32 {
-        panic!("Invalid event");
+    let mut input: i32;
+    loop {
+        input = get_int_from_user("Select event: ".to_string());
+        if input < 1 || input > valid_events.len() as i32 {
+            println!("Invalid input. Try again.");
+            continue;
+        }
+        break;
     }
+
     let gatya_event: &gatya_data::GatyaEvent = &valid_events[(input - 1) as usize];
     println!("Selected event: {}", gatya_event.banner_txt);
 
@@ -88,13 +101,19 @@ fn select_cc() -> String {
     println!("2. Japanese");
     println!("3. Korean");
     println!("4. Taiwanese");
+    // validate input
     let input: i32 = get_int_from_user("Select country code: ".to_string());
-    match input {
-        1 => "en".to_string(),
-        2 => "jp".to_string(),
-        3 => "kr".to_string(),
-        4 => "tw".to_string(),
-        _ => panic!("Invalid country"),
+    if input == 1 {
+        return "en".to_string();
+    } else if input == 2 {
+        return "jp".to_string();
+    } else if input == 3 {
+        return "kr".to_string();
+    } else if input == 4 {
+        return "tw".to_string();
+    } else {
+        println!("Invalid input. Try again.");
+        return select_cc();
     }
 }
 
