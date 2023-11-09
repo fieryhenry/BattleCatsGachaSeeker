@@ -16,9 +16,14 @@ seed here: <http://bc.godfat.org/>
 - [Rust](https://www.rust-lang.org/)
 - [Cargo](https://crates.io/) (If you installed rust using rustup, you should
   already have cargo)
+- [Git](https://git-scm.com/)
 
 ## Usage
 
+I don't have a release yet, so you will have to build from source.
+
 ```bash
+git clone https://github.com/fieryhenry/BattleCatsGachaSeeker.git
+cd BattleCatsGachaSeeker
 cargo run --release
 ```
