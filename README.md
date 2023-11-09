@@ -5,7 +5,8 @@ A tool for quickly finding gacha seeds in The Battle Cats.
 You can search for seeds that contain a specific pattern of cats or seeds that
 contain a specific pattern of rarities.
 
-I am very new to rust, so this code probably isn't great.
+I am very new to rust, so this code probably isn't great. I used it because
+python was too slow.
 
 The seed tracking code is based on godfat's work here:
 <https://gitlab.com/godfat/battle-cats-rolls> and you can view the cats for any
