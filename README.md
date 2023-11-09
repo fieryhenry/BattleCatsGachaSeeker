@@ -1,7 +1,24 @@
 # Battle Cats Gacha Seeker
 
-A tool for finding gacha seeds in The Battle Cats.
+A tool for quickly finding gacha seeds in The Battle Cats.
+
+You can search for seeds that contain a specific pattern of cats or seeds that
+contain a specific pattern of rarities.
+
+I am very new to rust, so this code probably isn't great.
 
 The code is heavly based on godfat's code here:
 <https://gitlab.com/godfat/battle-cats-rolls> and you can view the cats for any
 seed here: <http://bc.godfat.org/>
+
+## Prerequisites
+
+- [Rust](https://www.rust-lang.org/)
+- [Cargo](https://crates.io/) (If you installed rust using rustup, you should
+  already have cargo)
+
+## Usage
+
+```bash
+cargo run --release
+```
