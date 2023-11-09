@@ -32,16 +32,24 @@ pub struct GatyaEvent {
 }
 
 fn parse_gatya_event(index: i32, line: Vec<String>) -> GatyaEvent {
+    let length: i32 = line[9].parse::<i32>().unwrap();
+    let gatya_id_pos: i32 = 10 + (15 * (length - 1));
+    let rare_chance_pos: i32 = 16 + (15 * (length - 1));
+    let super_rare_chance_pos: i32 = 18 + (15 * (length - 1));
+    let uber_rare_chance_pos: i32 = 20 + (15 * (length - 1));
+    let legend_rare_chance_pos: i32 = 22 + (15 * (length - 1));
+    let banner_text_pos: i32 = 24 + (15 * (length - 1));
+
     GatyaEvent {
         index: index as u32,
         start: line[0].to_string(),
         end: line[2].to_string(),
-        gatya_id: line[10].to_string(),
-        rare_chance: line[16].to_string(),
-        super_rare_chance: line[18].to_string(),
-        uber_rare_chance: line[20].to_string(),
-        legend_rare_chance: line[22].to_string(),
-        banner_txt: line[24].to_string(),
+        gatya_id: line[gatya_id_pos as usize].to_string(),
+        rare_chance: line[rare_chance_pos as usize].to_string(),
+        super_rare_chance: line[super_rare_chance_pos as usize].to_string(),
+        uber_rare_chance: line[uber_rare_chance_pos as usize].to_string(),
+        legend_rare_chance: line[legend_rare_chance_pos as usize].to_string(),
+        banner_txt: line[banner_text_pos as usize].to_string(),
     }
 }
 
