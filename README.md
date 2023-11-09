@@ -6,7 +6,8 @@ You can search for seeds that contain a specific pattern of cats or seeds that
 contain a specific pattern of rarities.
 
 I am very new to rust, so this code probably isn't great. I used it because
-python was too slow.
+python was too slow. The `find_seed_range` function looks very ugly because it
+has been heavily optimized.
 
 The seed tracking code is based on godfat's work here:
 <https://gitlab.com/godfat/battle-cats-rolls> and you can view the cats for any
