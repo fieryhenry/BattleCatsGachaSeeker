@@ -83,14 +83,14 @@ pub fn get_gatya_event_from_index(data: &[GatyaEvent], index: u32) -> GatyaEvent
     panic!("Gatya event not found");
 }
 
-async fn get_latest_game_data_version(cc: String) -> String {
+async fn get_latest_game_data_version(cc: &str) -> String {
     let url: String =
         "https://raw.githubusercontent.com/fieryhenry/BCData/master/latest.txt".to_string();
     let client: reqwest::Client = reqwest::Client::new();
     let res: reqwest::Response = client.get(&url).send().await.unwrap();
     let body: String = res.text().await.unwrap();
     let lines: Vec<&str> = body.split('\n').collect();
-    match cc.as_str() {
+    match cc {
         "en" => lines[0].to_string(),
         "jp" => lines[1].to_string(),
         "kr" => lines[2].to_string(),
@@ -99,13 +99,13 @@ async fn get_latest_game_data_version(cc: String) -> String {
     }
 }
 
-pub async fn get_gatya_cat_data(cc: String, force: bool) -> Vec<Vec<i32>> {
+pub async fn get_gatya_cat_data(cc: &str, force: bool) -> Vec<Vec<i32>> {
     let file_path: String = format!("data/gatya_{}.csv", cc);
     let body: String;
     if std::path::Path::new(&file_path).exists() && !force {
         body = std::fs::read_to_string(file_path).unwrap();
     } else {
-        let latest_game_data_version: String = get_latest_game_data_version(cc.clone()).await;
+        let latest_game_data_version: String = get_latest_game_data_version(cc).await;
         let url: String = format!(
             "https://raw.githubusercontent.com/fieryhenry/BCData/master/{}/DataLocal/GatyaDataSetR1.csv",
             latest_game_data_version
@@ -136,13 +136,13 @@ pub async fn get_gatya_cat_data(cc: String, force: bool) -> Vec<Vec<i32>> {
     gatya_cat_data
 }
 
-pub async fn get_unitbuy_cat_data(cc: String, force: bool) -> Vec<Vec<i32>> {
+pub async fn get_unitbuy_cat_data(cc: &str, force: bool) -> Vec<Vec<i32>> {
     let file_path: String = format!("data/unitbuy_{}.csv", cc);
     let body: String;
     if std::path::Path::new(&file_path).exists() && !force {
         body = std::fs::read_to_string(file_path).unwrap();
     } else {
-        let latest_game_data_version: String = get_latest_game_data_version(cc.clone()).await;
+        let latest_game_data_version: String = get_latest_game_data_version(cc).await;
         let url: String = format!(
             "https://raw.githubusercontent.com/fieryhenry/BCData/master/{}/DataLocal/unitbuy.csv",
             latest_game_data_version
@@ -182,8 +182,7 @@ pub fn get_gatya_slot_data(
         gatya_slot_data.push(Vec::new());
     }
 
-    for i in 0..gatya_cat_data.len() {
-        let cat_id: i32 = gatya_cat_data[i];
+    for cat_id in gatya_cat_data {
         let rarity: i32 = unit_buy_cat_data[cat_id as usize][13];
         if rarity == 0 || rarity == 1 {
             continue;
@@ -203,9 +202,9 @@ pub fn get_gatya_slot_data(
 }
 
 fn get_slot_from_id(gatya_slot_data: Vec<Vec<i32>>, cat_id: i32) -> (i32, i32) {
-    for rarity in 0..gatya_slot_data.len() {
-        for slot_id in 0..gatya_slot_data[rarity].len() {
-            if gatya_slot_data[rarity][slot_id] == cat_id {
+    for (rarity, rarity_data) in gatya_slot_data.iter().enumerate() {
+        for (slot_id, slot_data) in rarity_data.iter().enumerate() {
+            if *slot_data == cat_id {
                 return (rarity as i32, slot_id as i32);
             }
         }
@@ -216,7 +215,7 @@ fn get_slot_from_id(gatya_slot_data: Vec<Vec<i32>>, cat_id: i32) -> (i32, i32) {
 pub fn get_cat_list_from_ids(gatya_slot_data: Vec<Vec<i32>>, cat_ids: Vec<i32>) -> Vec<(u32, u32)> {
     let mut cat_list: Vec<(u32, u32)> = Vec::new();
     for cat_id in cat_ids.iter() {
-        if cat_id.clone() == BLANK_SLOT_USER {
+        if *cat_id == BLANK_SLOT_USER {
             cat_list.push((BLANK_SLOT, 0))
         }
         let (rarity, slot_id) = get_slot_from_id(gatya_slot_data.clone(), *cat_id);

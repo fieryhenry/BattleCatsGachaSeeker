@@ -103,7 +103,7 @@ async fn get_password(inquiry_code: String) -> String {
     password
 }
 
-fn get_client_info(cc: String) -> serde_json::Value {
+fn get_client_info(cc: &str) -> serde_json::Value {
     let data: serde_json::Value = json!({
         "clientInfo": {
             "client": {
@@ -123,7 +123,7 @@ fn get_client_info(cc: String) -> serde_json::Value {
     data
 }
 
-async fn get_token(cc: String) -> String {
+async fn get_token(cc: &str) -> String {
     let inquiry_code: String = get_inquiry_code().await;
     let password: String = get_password(inquiry_code.clone()).await;
     let mut client_info: serde_json::Value = get_client_info(cc);
@@ -148,8 +148,8 @@ async fn get_token(cc: String) -> String {
     token
 }
 
-pub async fn get_event_data(cc: String) -> String {
-    let token: String = get_token(cc.clone()).await;
+pub async fn get_event_data(cc: &str) -> String {
+    let token: String = get_token(cc).await;
     let cc_code: String = cc.replace("jp", "");
     let base_url: String = format!(
         "https://nyanko-events.ponosgames.com/battlecats{}_production/gatya.tsv",

@@ -3,18 +3,18 @@ mod gatya_data;
 
 use std::{io::Write, time::Instant};
 
-async fn get_event_data(cc: String, force: bool) -> String {
+async fn get_event_data(cc: &str, force: bool) -> String {
     let file_path: String = format!("data/gatya_{}.tsv", cc);
     if std::path::Path::new(&file_path).exists() && !force {
         let data: String = std::fs::read_to_string(file_path).unwrap();
         return data;
     }
-    let data = event_data::get_event_data(cc.clone()).await;
+    let data = event_data::get_event_data(cc).await;
     std::fs::write(file_path, data.clone()).unwrap();
     data
 }
 
-fn get_int_from_user(prompt: String) -> i32 {
+fn get_int_from_user(prompt: &str, default: Option<i32>) -> i32 {
     print!("{}", prompt);
     std::io::stdout().flush().unwrap();
 
@@ -23,38 +23,41 @@ fn get_int_from_user(prompt: String) -> i32 {
 
     let input: i32 = match input.trim().parse() {
         Ok(num) => num,
-        Err(_) => {
-            println!("Invalid input. Try again.");
-            return get_int_from_user(prompt);
-        }
+        Err(_) => match default {
+            Some(d) => return d,
+            None => {
+                println!("Invalid input. Try again.");
+                return get_int_from_user(prompt, default);
+            }
+        },
     };
     input
 }
 
 fn ask_if_want_to_update_data() -> bool {
-    let input: i32 = get_int_from_user("Update Game Data? (1 for yes, 2 for no): ".to_string());
-    if input == 1 {
-        return true;
-    } else if input == 2 {
-        return false;
-    } else {
-        println!("Invalid input. Try again.");
-        return ask_if_want_to_update_data();
+    let input: i32 = get_int_from_user("Update Game Data? (1 for yes, 2 for no): ", None);
+    match input {
+        1 => true,
+        2 => false,
+        _ => {
+            println!("Invalid input. Try again.");
+            ask_if_want_to_update_data()
+        }
     }
 }
 
-async fn select_event(cc: String) -> gatya_data::GatyaEvent {
+async fn select_event(cc: &str) -> (gatya_data::GatyaEvent, bool) {
     std::fs::create_dir_all("data").unwrap();
 
     let force: bool = ask_if_want_to_update_data();
 
     println!("Getting event data...");
 
-    let data: String = get_event_data(cc.clone(), force).await;
+    let data: String = get_event_data(cc, force).await;
     let gatya_events: Vec<gatya_data::GatyaEvent> = gatya_data::parse_gatya_events(data);
     let valid_events: Vec<&gatya_data::GatyaEvent> = gatya_events
         .iter()
-        .filter(|gatya_event| gatya_event.banner_txt != "")
+        .filter(|gatya_event| !gatya_event.banner_txt.is_empty())
         .collect();
     for (i, gatya_event) in valid_events.iter().enumerate() {
         let start_time: String = gatya_event.start.clone();
@@ -82,7 +85,7 @@ async fn select_event(cc: String) -> gatya_data::GatyaEvent {
     }
     let mut input: i32;
     loop {
-        input = get_int_from_user("Select event: ".to_string());
+        input = get_int_from_user("Select event: ", None);
         if input < 1 || input > valid_events.len() as i32 {
             println!("Invalid input. Try again.");
             continue;
@@ -90,10 +93,10 @@ async fn select_event(cc: String) -> gatya_data::GatyaEvent {
         break;
     }
 
-    let gatya_event: &gatya_data::GatyaEvent = &valid_events[(input - 1) as usize];
+    let gatya_event: &gatya_data::GatyaEvent = valid_events[(input - 1) as usize];
     println!("Selected event: {}", gatya_event.banner_txt);
 
-    return gatya_event.clone();
+    (gatya_event.clone(), force)
 }
 
 fn select_cc() -> String {
@@ -102,18 +105,16 @@ fn select_cc() -> String {
     println!("3. Korean");
     println!("4. Taiwanese");
     // validate input
-    let input: i32 = get_int_from_user("Select country code: ".to_string());
-    if input == 1 {
-        return "en".to_string();
-    } else if input == 2 {
-        return "jp".to_string();
-    } else if input == 3 {
-        return "kr".to_string();
-    } else if input == 4 {
-        return "tw".to_string();
-    } else {
-        println!("Invalid input. Try again.");
-        return select_cc();
+    let input: i32 = get_int_from_user("Select country code: ", None);
+    match input {
+        1 => "en".to_string(),
+        2 => "jp".to_string(),
+        3 => "kr".to_string(),
+        4 => "tw".to_string(),
+        _ => {
+            println!("Invalid input. Try again.");
+            select_cc()
+        }
     }
 }
 
@@ -121,11 +122,14 @@ fn select_cats() -> Vec<i32> {
     let mut cats_ids: Vec<i32> = Vec::new();
     let mut counter: u32 = 0;
     loop {
-        let cat_id: i32 = get_int_from_user(format!(
-            "ID for cat {} (-1 to stop, {} for blank): ",
-            counter + 1,
-            BLANK_SLOT_USER,
-        ));
+        let cat_id: i32 = get_int_from_user(
+            &format!(
+                "ID for cat {} (-1 to stop, {} for blank): ",
+                counter + 1,
+                BLANK_SLOT_USER,
+            ),
+            None,
+        );
         if cat_id == -1 {
             break;
         }
@@ -133,7 +137,7 @@ fn select_cats() -> Vec<i32> {
         counter += 1;
     }
 
-    if cats_ids.len() == 0 {
+    if cats_ids.is_empty() {
         println!("No cats entered. Try again.");
         return select_cats();
     }
@@ -150,11 +154,14 @@ fn select_rarities() -> Vec<i32> {
     println!("3. Uber Rare");
     println!("4. Legend Rare");
     loop {
-        let rarity: i32 = get_int_from_user(format!(
-            "Rarity for cat {} (-1 to stop, {} for blank): ",
-            counter + 1,
-            BLANK_SLOT_USER,
-        ));
+        let rarity: i32 = get_int_from_user(
+            &format!(
+                "Rarity for cat {} (-1 to stop, {} for blank): ",
+                counter + 1,
+                BLANK_SLOT_USER,
+            ),
+            None,
+        );
         if rarity == -1 {
             break;
         }
@@ -163,11 +170,11 @@ fn select_rarities() -> Vec<i32> {
             counter += 1;
             continue;
         }
-        rarities.push(rarity - 1 as i32);
+        rarities.push(rarity - 1_i32);
         counter += 1;
     }
 
-    if rarities.len() == 0 {
+    if rarities.is_empty() {
         println!("No rarities entered. Try again.");
         return select_rarities();
     }
@@ -192,12 +199,12 @@ fn get_cat_slots(gatya_slot_data: Vec<Vec<i32>>, total_rares: u32) -> Vec<(u32, 
 
 #[tokio::main]
 async fn main() {
-    let cc: String = select_cc();
+    let cc: &str = &select_cc();
     println!();
-    let gatya_event: gatya_data::GatyaEvent = select_event(cc.clone()).await;
-    let unitbuy_cat_data: Vec<Vec<i32>> = gatya_data::get_unitbuy_cat_data(cc.clone(), false).await;
+    let (gatya_event, force) = select_event(cc).await;
+    let unitbuy_cat_data: Vec<Vec<i32>> = gatya_data::get_unitbuy_cat_data(cc, force).await;
 
-    let gatya_cat_data: Vec<Vec<i32>> = gatya_data::get_gatya_cat_data(cc.clone(), false).await;
+    let gatya_cat_data: Vec<Vec<i32>> = gatya_data::get_gatya_cat_data(cc, force).await;
 
     let gatya_id: i32 = gatya_event.gatya_id.parse::<i32>().unwrap();
 
@@ -217,7 +224,8 @@ async fn main() {
     println!();
 
     let seek_or_find: i32 = get_int_from_user(
-        "1. Find seed by cats\n2. Seek seed by rarities\nEnter choice: ".to_string(),
+        "1. Find seed by cats\n2. Seek seed by rarities\nEnter choice: ",
+        None,
     );
     let mut cats: Vec<(u32, u32)> = Vec::new();
     if seek_or_find == 1 {
@@ -230,6 +238,8 @@ async fn main() {
     }
     let slice_cats: &[(u32, u32)] = cats.as_slice();
 
+    let thread_count: i32 = get_int_from_user("Enter total threads to use (default 8):", Some(8));
+
     println!("\nFinding seed...");
     let start: Instant = Instant::now();
     let seeds: Vec<u32> = find_seed(
@@ -241,12 +251,13 @@ async fn main() {
         legend_chance,
         uber_chance,
         super_rare_chance,
+        thread_count.try_into().unwrap(),
     );
     let duration: std::time::Duration = start.elapsed();
 
     println!();
 
-    if seeds.len() == 0 {
+    if seeds.is_empty() {
         println!("Seed not found. Try again.");
     } else if seeds.len() == 1 {
         println!("Seed: {}", seeds[0]);
@@ -282,7 +293,7 @@ fn is_collisions(cats: Vec<(u32, u32)>, total_rares: u32) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
 
 fn find_seed(
@@ -294,8 +305,8 @@ fn find_seed(
     legend_chance: u32,
     uber_chance: u32,
     super_rare_chance: u32,
+    total_threads: u32,
 ) -> Vec<u32> {
-    let total_threads: u32 = 8;
     let mut threads: Vec<std::thread::JoinHandle<Vec<u32>>> = Vec::new();
     let mut start_point: u32 = 1;
     let step: u32 = 0xFFFFFFFF / total_threads;
